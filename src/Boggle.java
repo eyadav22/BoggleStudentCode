@@ -1,6 +1,5 @@
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 
 public class Boggle {
 
@@ -16,24 +15,35 @@ public class Boggle {
         int cols = board[0].length;
 
         boolean[][] visited = new boolean[rows][cols];
-        // Use a HashSet instead of an array list to avoid duplicates
-        HashSet<String> goodWords = new HashSet<>();
+        // Use an ArrayList instead of a HashSet (duplicates handled in TST)
+        ArrayList<String> goodWords = new ArrayList<>();
 
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                dfs(board, visited, i, j, "", tst.getRoot(), goodWords);
+                // Use StringBuilder to avoid creating new strings each recursion
+                // Got rid of String word = prefix + c
+                dfs(board, visited, i, j, new StringBuilder(), tst.getRoot(), goodWords);
             }
         }
+
         String[] sol = goodWords.toArray(new String[0]);
         Arrays.sort(sol);
         return sol;
     }
 
-    private static void dfs(char[][] board, boolean[][] visited, int i, int j, String prefix, TST.TSTNode node, HashSet<String> goodWords) {
+    private static void dfs(char[][] board,
+                            boolean[][] visited,
+                            int i,
+                            int j,
+                            StringBuilder prefix,
+                            TST.TSTNode node,
+                            ArrayList<String> goodWords) {
+
         // Return if out of bounds
         if (i < 0 || i >= board.length || j < 0 || j >= board[0].length) {
             return;
         }
+
         // Return if previously visited
         if (visited[i][j]) return;
 
@@ -43,24 +53,29 @@ public class Boggle {
         // Return if node is null
         if (node == null) return;
 
-        // Optimize with numbers (To-do)
-        String word = prefix + c;
+        // Append character instead of creating a new String
+        prefix.append(c);
+
         // Add word if present in Dictionary
         if (node.isEndOfWord) {
-            goodWords.add(word);
-            // Allows us the remove duplicates without adding additional time complexity
+            goodWords.add(prefix.toString());
+            // Allows us to remove duplicates without adding additional time complexity
             // Makes HashSet redundant
             node.isEndOfWord = false;
         }
+
         // Mark node as visited
         visited[i][j] = true;
+
         // Recurse to adjacent squares
-        dfs(board, visited, i - 1, j, word, node.mid, goodWords);
-        dfs(board, visited, i + 1, j, word, node.mid, goodWords);
-        dfs(board, visited, i, j - 1, word, node.mid, goodWords);
-        dfs(board, visited, i, j + 1, word, node.mid, goodWords);
-        // Mark node as unvisited so it can be used in a future word
+        dfs(board, visited, i - 1, j, prefix, node.mid, goodWords);
+        dfs(board, visited, i + 1, j, prefix, node.mid, goodWords);
+        dfs(board, visited, i, j - 1, prefix, node.mid, goodWords);
+        dfs(board, visited, i, j + 1, prefix, node.mid, goodWords);
+
+        // Backtrack by unvisiting and removing the last character
         visited[i][j] = false;
+        prefix.deleteCharAt(prefix.length() - 1);
     }
 
     // Helper Method for recursion
